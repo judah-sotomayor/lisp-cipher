@@ -1,4 +1,4 @@
-(in-package :lisp-crypto)
+(in-package :lisp-cipher)
 
 ;; b = 4, k = 2, m = 2
 ;; 
@@ -227,6 +227,24 @@ As per the original algorithm, #\j is removed from the key."
     (map 'string #'mini-code-char (apply #'concatenate 'vector
                                          (loop for b in (batches message-translated d)
                                                collect (hill-product key b))))))
+
+;; TODO finish implementing this so that you can easily decrypt the hill cipher.
+(defun inverse (matrix)
+  "Invert MATRIX."
+  (let* ((d (array-dimension matrix 0))
+         (augmented (make-array (list d
+                                      (* 2 d)))))
+    (loop for i below (* d d)
+          for (x y) = (array-index-row-major matrix i)
+          do (setf (aref augmented x y) (aref matrix x y)))
+    (loop for i = d then (+ i d d 1)
+          while (< i (* d 2 d))
+          for (x y) = (array-index-row-major augmented i)
+          do (setf (aref augmented x y) 1))
+
+
+    augmented
+    ))
 
 (defun vigenere (key message &optional (enc t))
   "Encipher MESSAGE using KEY according to the Vigenere scheme."

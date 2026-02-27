@@ -1,5 +1,5 @@
 {
-  description = "lisp-crypto";
+  description = "lisp-cipher";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
@@ -15,7 +15,7 @@
       {
         devShells = forAllSystems (pkgs: system: {
           default = pkgs.mkShell {
-            name = "lisp-crypto";
+            name = "lisp-cipher";
             packages = with pkgs; [
               sbcl
               sbclPackages.qlot-cli

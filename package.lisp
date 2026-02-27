@@ -1,4 +1,4 @@
-(defpackage lisp-crypto
+(defpackage lisp-cipher
   (:use :cl :alexandria :serapeum)
   (:export
    :expt-mod
