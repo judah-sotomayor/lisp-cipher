@@ -227,3 +227,21 @@ As per the original algorithm, #\j is removed from the key."
     (map 'string #'mini-code-char (apply #'concatenate 'vector
                                          (loop for b in (batches message-translated d)
                                                collect (hill-product key b))))))
+
+(defun vigenere (key message &optional (enc t))
+  "Encipher MESSAGE using KEY according to the Vigenere scheme."
+  (let* ((message (sanitize message))
+         (key (sanitize key))
+         (message-length (length message))
+         (key-length (length key))
+         (res (make-array (length message) :element-type 'character)))
+    (loop for c across (sanitize message)
+          for i below message-length
+          for j = 0 then (mod i key-length)
+          with k = (sanitize key)
+          do (setf (elt res i)
+                   (mini-code-char (mod (+ (mini-char-code (elt k j))
+                                           (mini-char-code (elt message i)))
+                                        26)))
+          )
+    res))
