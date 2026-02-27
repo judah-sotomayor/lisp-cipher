@@ -127,14 +127,11 @@ As per the original algorithm, #\j is removed from the key."
         (loop for i from 0 below (1- (length plaintext))
               for d1 = (elt plaintext i)
               for d2 = (elt plaintext (1+ i))
-              do (format t "~%~a: " i)
 
               do
-                 (progn 
-                   (format t "~a ~a'" d1 d2)
-                   (setf (values (elt ciphered i) (elt ciphered (1+ i)))
-                         (playfair-cipher-digraph d1 d2 key-square backing-vector enc)
-                         i (1+ i)))
+                 (setf (values (elt ciphered i) (elt ciphered (1+ i)))
+                       (playfair-cipher-digraph d1 d2 key-square backing-vector enc)
+                       i (1+ i))
 
               finally (return ciphered))))))
 
