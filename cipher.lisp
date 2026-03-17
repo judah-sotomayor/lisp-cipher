@@ -268,7 +268,7 @@ As per the original algorithm, #\j is removed from the key."
                                              collecting `(elt output ,pos)
                                              collecting `(elt input ,i))))
                              (t `(setf (elt output ,p)
-                                       (elt input ,i))))) )
+                                       (elt input ,i))))))
        output)))
 
 (fbind* ((permute-initial (permuter 3 5 1 6 7 0 2 4))
