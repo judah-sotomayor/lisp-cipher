@@ -1,0 +1,13 @@
+#!/usr/bin/env -S qlot exec sbcl --noinform --script
+
+(asdf:load-system :lisp-cipher)
+
+(defun prompt-read (prompt)
+  (format *query-io* "~a" prompt)
+  (force-output *query-io*)
+  (read-line *query-io*))
+
+(let ((plaintext (parse-integer (prompt-read "Enter Plaintext (HEX): ") :radix 16))
+      (key (parse-integer (prompt-read  "Enter Key (HEX): ") :radix 16))
+      (rounds (parse-integer (prompt-read  "Rounds (DEC): ") :radix 10)))
+  (format *query-io* "Ciphertext (HEX): ~x~%" (lisp-cipher:des plaintext key rounds)))
