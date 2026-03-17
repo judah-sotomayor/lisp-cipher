@@ -1,5 +1,5 @@
 (asdf:defsystem :lisp-cipher
-  :depends-on (:alexandria :serapeum)
+  :depends-on (:alexandria :serapeum :bit-smasher)
   :components ((:file "package")
                (:file "cipher"))
   :in-order-to ((test-op (test-op :lisp-cipher/tests))))

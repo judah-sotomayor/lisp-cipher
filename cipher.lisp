@@ -1,8 +1,5 @@
 (in-package :lisp-cipher)
 
-;; b = 4, k = 2, m = 2
-;; 
-
 (defmacro multiple-value-setf (places value-form)
   "Bind PLACES to values returned from VALUE-FORM using setf.
 If there are more PLACES than values from VALUE-FORM, nil is assigned to the extra PLACES.
@@ -118,6 +115,7 @@ As per the original algorithm, #\j is removed from the key."
                       (write-char #\x stream))))))
 
 (defun make-playfair (key)
+  "Return a closure which calculates the Playfair cipher using KEY."
   (multiple-value-bind (key-square backing-vector) (make-playfair-square
                                                     (playfair-sanitize-key key))
     (lambda (message &optional (enc t))
@@ -132,7 +130,6 @@ As per the original algorithm, #\j is removed from the key."
                  (setf (values (elt ciphered i) (elt ciphered (1+ i)))
                        (playfair-cipher-digraph d1 d2 key-square backing-vector enc)
                        i (1+ i))
-
               finally (return ciphered))))))
 
 (defun playfair-cipher-digraph (d1 d2 key-square backing-vector enc
@@ -161,13 +158,11 @@ As per the original algorithm, #\j is removed from the key."
         (aref key-square (first p1) (second p2))
         (aref key-square (first p2) (second p1)))))))
 
-
 (defun perfect-square-p (n)
   (let ((sq (isqrt n)))
     (when (and (>= n 0)
                (= n (expt sq 2)))
       sq)))
-
 
 (defun sanitize (text)
   "Clean up text for use in any cipher"
@@ -175,7 +170,6 @@ As per the original algorithm, #\j is removed from the key."
    (remove-if-not
     #'alpha-char-p
     text)))
-
 
 (defun mini-char-code (character)
   (- (char-code character) (char-code #\a)))
@@ -260,3 +254,67 @@ As per the original algorithm, #\j is removed from the key."
                                         26)))
           )
     res))
+
+(defmacro permuter (&rest positions)
+  `(lambda (input)
+     (let ((output (make-array  ,(length (flatten positions )) :element-type 'bit)))
+       ,@(remove nil (loop for p in positions
+                           for i from 0 upto (length positions)
+                           collecting
+                           (cond
+                             ((null p) nil)
+                             ((listp p)
+                              `(setf ,@(loop for pos in p
+                                             collecting `(elt output ,pos)
+                                             collecting `(elt input ,i))))
+                             (t `(setf (elt output ,p)
+                                       (elt input ,i))))) )
+       output)))
+
+(fbind* ((permute-initial (permuter 3 5 1 6 7 0 2 4))
+         (permute-expand (permuter nil nil nil nil 4 (3 1) 0 (2 5)))
+         (permute-contract (permuter 4 5 nil 2 1 3 0))
+         (permute-4x4 (permuter nil nil nil nil 1 3 0 2))
+         (permute-final (permuter 5 2 6 0 7 1 3 4))
+         (sbox
+          (let ((subs (make-array '(4 16)
+                                  :initial-contents
+                                  '((14  4 13  1  2 15 11  8  3 10  6 12  5  9  0  7)  ; Row 0
+                                    ( 0 15  7  4 14  2 13  1 10  6 12 11  9  5  3  8)  ; Row 1
+                                    ( 4  1 14  8 13  6  2 11 15 12  9  7  3 10  5  0)  ; Row 2
+                                    (15 12  8  2  4  9  1  7  5 11  3 14 10  0  6 13)) ; Row 3
+                                  )))
+            (lambda (s)
+              (permute-4x4
+               (bit-smasher:bits<-
+                (aref subs
+                      (bit-smasher:bits->int (list (elt s 0)
+                                                   (elt s 5)))
+                      (bit-smasher:bits->int (make-array 4
+                                                         :element-type 'bit
+                                                         :displaced-to s
+                                                         :displaced-index-offset 1)))))))))
+  
+  (defun des (message key rounds
+              &aux
+                (k (make-array 7 :element-type 'bit
+                                 :displaced-to (bit-smasher:bits<- key)))
+                (m (permute-initial (bit-smasher:bits<- message)) ))
+    (flet ((split-shift (round
+                         &aux
+                           (r (- (mod (1- (* round 2)) 4))))
+             (rotate (make-array 3 :element-type 'bit :displaced-to k) r)
+             (rotate (make-array 4 :element-type 'bit :displaced-to k :displaced-index-offset 3) r)
+             k))
+      (dotimes (round rounds)
+        (let* ((rp (permute-expand m))
+               (kp (permute-contract (split-shift (1+ round))))
+               (s (make-array 6 :element-type 'bit))
+               (r1 (make-array 4 :element-type 'bit)))
+          (map-into s #'logxor kp rp)
+          (map-into r1 #'logxor (sbox s) m)
+          (replace m m
+                   :start2 4)
+          (replace m r1
+                   :start1 4)))
+      (bit-smasher:bits->int (permute-final m)))))
