@@ -1,3 +1,12 @@
+(in-package :cl-user)
+(defpackage lisp-cipher
+  (:use :cl :alexandria :serapeum)
+  (:export
+   :expt-mod
+   :caesar-cipher-char
+   :caesar-cipher
+   :make-playfair
+   :des))
 (in-package :lisp-cipher)
 
 (defmacro multiple-value-setf (places value-form)

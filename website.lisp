@@ -15,6 +15,7 @@
         (:head
          (:title ,title)
          (:script :src "https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" :integrity "sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" :crossorigin "anonymous"))
+        (:script :src "https://unpkg.com/hyperscript.org@0.9.14" :integrity "sha384-NzchC8z9HmP/Ed8cheGl9XuSrFSkDNHPiDl+ujbHE0F0I7tWC4rUnwPXP+7IvVZv" :crossorigin "anonymous")
 
         (:body
          (:h1 ,title)
@@ -40,15 +41,51 @@
                   (:div (:label :for "des-rounds" "Rounds (DEC): ")
                         (:input :id "des-rounds" :name "des-rounds" :type "number" :min 1 :max 16 :value 2))
                   (:button "Submit"))
-           (:h3 "result")
-           (:div :id "des-result")))))
+           (:h3 :id "des-result" "Result: ")
+           )
+          (:hr)
+          (:div
+           (:h2 "Playfair Cipher")
+           (:form :id "playfair-input"
+                  :hx-target "#playfair-result"
+                  :hx-swap "outerHTML"
+                  (:div (:label :for "playfair-key" "Key" )
+                        (:input :id "playfair-key" :name "playfair-key" :type "text" :maxlength 25))
+                  (:div (:label :for "playfair-message" "Message")
+                        (:textarea :id "playfair-message" :name "playfair-message"))
+                  (:button :name "encrypt" :hx-post "/playfair/encrypt" 
+                           "Encrypt")
+                  (:button :name "decrypt" :hx-post "/playfair/decrypt" 
+                           "Decrypt"))
+           (:div (:h3 "Result")
+                 (:textarea :readonly t :id "playfair-result"))
+
+           (:button :_
+                    "on click set content to #playfair-message's value then
+set #playfair-message's value to #playfair-result's value then
+set #playfair-result's value to content" "Swap result and message")))))
+
+(setf (ningle:route *app* "/playfair/:action" :method :POST)
+      (lambda (params)
+        (let ((operation (switch ((assocdr :action params) :test #'equal)
+                           ("encrypt" :encrypt)
+                           ("decrypt" :decrypt)
+                           (t (error "Bad post!"))))
+
+
+              (message (assocdr "playfair-message" params :test #'string=))
+              (key (assocdr "playfair-key" params :test #'string=)))
+          (fbind ((pf (lisp-cipher:make-playfair key)))
+            (spinneret:with-html-string (:textarea :readonly t :id "playfair-result" (if (eq :encrypt operation)
+                                                                                         (pf message t)
+                                                                                         (pf message nil))))))))
 
 (setf (ningle:route *app* "/des" :method :POST)
       (lambda (params)
         (handler-case (let ((plaintext (parse-integer (assocdr "des-plaintext" params :test #'string=) :radix 16))
                             (key (parse-integer (assocdr "des-key" params :test #'string=) :radix 16))
                             (rounds (parse-integer (assocdr "des-rounds" params :test #'string=))))
-                        (fmt "~x" (lisp-cipher:des plaintext key rounds)))
+                        (fmt "Result: ~x" (lisp-cipher:des plaintext key rounds)))
           (t ()
             "Invalid input!"))))
 
@@ -58,10 +95,10 @@
   (setf (lack.response:response-status ningle:*response*) 404)
   "Not Found")
 
-(defun start (&key (server :hunchentoot) (address "127.0.0.1") (port 8000))
+(defun start (&optional (address "127.0.0.1") (port 8000))
   (clack:clackup
    *app*
-   :server server
+   :server :hunchentoot
    :address address
    :port port
    ))

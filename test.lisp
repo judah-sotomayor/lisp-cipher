@@ -1,7 +1,6 @@
 (in-package :cl-user)
 (defpackage lisp-cipher/test
   (:use :cl :fiveam :lisp-cipher :serapeum))
-
 (in-package :lisp-cipher/test)
 
 (def-suite lisp-cipher
@@ -26,7 +25,7 @@
 
 
 (test playfair
-  (fbind ((playfair-cipher (make-playfair "monarchy")))
+  (serapeum:fbind ((playfair-cipher (make-playfair "monarchy")))
     (let ((result (playfair-cipher "instruments")))
       (is (string= result "gatlmzclrqxa")))))
 
