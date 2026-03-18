@@ -16,6 +16,7 @@
   (list))
 
 (defun des/handler (cmd)
+  (declare (ignore cmd))
   (let ((plaintext (parse-integer (prompt-read "Enter Plaintext (HEX): ") :radix 16))
         (key (parse-integer (prompt-read  "Enter Key (HEX): ") :radix 16))
         (rounds (parse-integer (prompt-read  "Rounds (DEC): ") :radix 10)))

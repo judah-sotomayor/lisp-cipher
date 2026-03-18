@@ -4,6 +4,8 @@
   (:export
    :start))
 (in-package :lisp-cipher/website)
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (pushnew "_" spinneret:*unvalidated-attribute-prefixes* :test #'equal))
 
 (defvar *app* (make-instance 'ningle:app))
 
